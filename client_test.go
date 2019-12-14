@@ -55,3 +55,22 @@ func TestClient_ReadCallback(t *testing.T) {
 		t.Error("invalid message type")
 	}
 }
+
+func TestClient_IngoreEmpty(t *testing.T) {
+	client := Client{"test", nil}
+	broadcast := make(chan *Message, 1)
+	buffer := []byte("\n")
+	callback := ReadCallback{&client, broadcast}
+	callback.Write(buffer)
+
+	var broadcasted bool
+	select {
+	case <-broadcast:
+		broadcasted = true
+	default:
+		broadcasted = false
+	}
+	if broadcasted {
+		t.Error("broadcasted empty message")
+	}
+}

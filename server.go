@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -31,7 +32,9 @@ func (s *Server) Connect(w http.ResponseWriter, r *http.Request) {
 	go client.ReadPump(r.Body, s.pipe.broadcast)
 	time.Sleep(10 * time.Millisecond)
 	setHeaders(w)
-	go client.WritePump(WriteFlusher{w, getFlusher(w)}, AnsiFormatter{})
+	writer := WriteFlusher{w, getFlusher(w)}
+	printWelcome(writer)
+	go client.WritePump(writer, AnsiFormatter{})
 	<-r.Context().Done()
 }
 
@@ -39,6 +42,10 @@ func setHeaders(w http.ResponseWriter) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func printWelcome(w io.Writer) {
+	fmt.Fprintf(w, "Welcome to curlchat\n")
 }
 
 func getFlusher(w http.ResponseWriter) http.Flusher {

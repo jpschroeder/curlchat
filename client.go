@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"io"
 )
 
@@ -31,6 +32,8 @@ type ReadCallback struct {
 }
 
 func (r ReadCallback) Write(buffer []byte) (int, error) {
-	r.broadcast <- &Message{r.from, buffer, ClientMsg}
+	if bytes.Compare([]byte("\n"), buffer) != 0 {
+		r.broadcast <- &Message{r.from, buffer, ClientMsg}
+	}
 	return len(buffer), nil
 }

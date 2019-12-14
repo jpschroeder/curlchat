@@ -35,7 +35,7 @@ func TestPipe_Run(t *testing.T) {
 	}
 }
 
-func TestPipe_NexID(t *testing.T) {
+func TestPipe_NextID(t *testing.T) {
 	pipe := &Pipe{}
 	id1 := pipe.NextID()
 	if id1 != 1 {
