@@ -8,28 +8,17 @@ import (
 )
 
 type Server struct {
-	pipe    *Pipe
+	pipes   *PipeCollection
 	baseURL string
 }
 
-func (s *Server) GetPipe() *Pipe {
-	if s.pipe == nil {
-		s.pipe = NewPipe()
-		go func() {
-			s.pipe.Run()
-			s.pipe = nil
-		}()
-	}
-	return s.pipe
-}
-
 func (s *Server) Connect(w http.ResponseWriter, r *http.Request) {
-	pipe := s.GetPipe()
+	pipe := s.pipes.GetPipe()
 	client := &Client{getUserName(r, pipe.NextID()), make(chan *Message, 256)}
 	defer pipe.Unregister(client)
 	pipe.Register(client)
 
-	go client.ReadPump(r.Body, s.pipe.broadcast)
+	go client.ReadPump(r.Body, pipe.broadcast)
 	time.Sleep(10 * time.Millisecond)
 	setHeaders(w)
 	writer := WriteFlusher{w, getFlusher(w)}
