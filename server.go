@@ -14,7 +14,10 @@ type Server struct {
 
 func (s *Server) Connect(w http.ResponseWriter, r *http.Request) {
 	pipe := s.pipes.GetPipe()
-	client := &Client{getUserName(r, pipe.NextID()), make(chan *Message, 256)}
+	client := &Client{
+		username: getUserName(r, pipe.NextID()),
+		oldcurl:  isOldCurl(r.UserAgent()),
+		send:     make(chan *Message, 256)}
 	defer pipe.Unregister(client)
 	pipe.Register(client)
 

@@ -3,10 +3,14 @@ package main
 import (
 	"bytes"
 	"io"
+	"time"
 )
+
+const noop = "\033[0m" // use reset color as noop
 
 type Client struct {
 	username string
+	oldcurl  bool
 	send     chan *Message
 }
 
@@ -17,12 +21,25 @@ func (c *Client) ReadPump(reader io.Reader, broadcast chan<- *Message) {
 }
 
 func (c *Client) WritePump(writer io.Writer, formatter Formatter) {
+
+	// drip a stream of noop characters to fix a bug in old versions of curl
+	ticker := time.NewTicker(500 * time.Millisecond)
+	if !c.oldcurl {
+		ticker.Stop()
+	} else {
+		defer ticker.Stop()
+	}
+
 	for {
-		message, ok := <-c.send
-		if !ok {
-			break
+		select {
+		case message, ok := <-c.send:
+			if !ok {
+				return
+			}
+			writer.Write(formatter.Format(message, c))
+		case <-ticker.C:
+			writer.Write([]byte(noop)) // reset color as noop
 		}
-		writer.Write(formatter.Format(message, c))
 	}
 }
 

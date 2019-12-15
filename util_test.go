@@ -54,3 +54,39 @@ func TestUtil_WriteFlusher(t *testing.T) {
 		t.Error("flush not called")
 	}
 }
+
+func TestUtil_IsOldCurl(t *testing.T) {
+	if isOldCurl("curl/7.58.0") == false {
+		t.Error("7.58 is old")
+	}
+	if isOldCurl("curl/7.67.9") == false {
+		t.Error("7.67 is old")
+	}
+	if isOldCurl("curl/6.68.0") == false {
+		t.Error("6.68 is old")
+	}
+	if isOldCurl("curl/6.70.0") == false {
+		t.Error("6.70 is old")
+	}
+	if isOldCurl("curl/7.67.0-DEV") == false {
+		t.Error("7.67 is old")
+	}
+	if isOldCurl("curl/7.68.0-DEV") == true {
+		t.Error("7.68 is new")
+	}
+	if isOldCurl("curl/7.68.0") == true {
+		t.Error("7.68 is new")
+	}
+	if isOldCurl("curl/7.68.5") == true {
+		t.Error("7.68 is new")
+	}
+	if isOldCurl("curl/8.00.0") == true {
+		t.Error("8.00 is new")
+	}
+	if isOldCurl("blahbloo") == true {
+		t.Error("everything else isn't old")
+	}
+	if isOldCurl("curly/1.00.0") == true {
+		t.Error("everything else isn't old")
+	}
+}

@@ -3,10 +3,11 @@ package main
 import (
 	"bytes"
 	"testing"
+	"time"
 )
 
 func TestClient_ReadPump(t *testing.T) {
-	client := Client{"test", nil}
+	client := testClient()
 	reader := TestReader{[]byte("test buffer")}
 	broadcast := make(chan *Message, 1)
 
@@ -19,7 +20,7 @@ func TestClient_ReadPump(t *testing.T) {
 }
 
 func TestClient_WritePump(t *testing.T) {
-	client := Client{"test", make(chan *Message, 1)}
+	client := testClient()
 	message := &Message{buffer: []byte("test buffer")}
 	w := TestWriter{}
 
@@ -32,11 +33,31 @@ func TestClient_WritePump(t *testing.T) {
 	}
 }
 
+func TestClient_WriteDrip(t *testing.T) {
+	client := testClient()
+	client.oldcurl = true
+	w := TestWriter{}
+
+	go client.WritePump(&w, &TestFormatter{})
+
+	for {
+		if w.written != nil {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	close(client.send)
+
+	if bytes.Compare(w.written, []byte(noop)) != 0 {
+		t.Errorf("noop not dripped: %s", string(w.written))
+	}
+}
+
 func TestClient_ReadCallback(t *testing.T) {
-	client := Client{"test", nil}
+	client := testClient()
 	broadcast := make(chan *Message, 1)
 	buffer := []byte("test buffer")
-	callback := ReadCallback{&client, broadcast}
+	callback := ReadCallback{client, broadcast}
 
 	length, _ := callback.Write(buffer)
 	if len(buffer) != length {
@@ -45,7 +66,7 @@ func TestClient_ReadCallback(t *testing.T) {
 
 	msg := <-broadcast
 
-	if msg.from != &client {
+	if msg.from != client {
 		t.Error("client mismatch")
 	}
 	if bytes.Compare(msg.buffer, buffer) != 0 {
@@ -57,10 +78,10 @@ func TestClient_ReadCallback(t *testing.T) {
 }
 
 func TestClient_IngoreEmpty(t *testing.T) {
-	client := Client{"test", nil}
+	client := testClient()
 	broadcast := make(chan *Message, 1)
 	buffer := []byte("\n")
-	callback := ReadCallback{&client, broadcast}
+	callback := ReadCallback{client, broadcast}
 	callback.Write(buffer)
 
 	var broadcasted bool
@@ -73,4 +94,8 @@ func TestClient_IngoreEmpty(t *testing.T) {
 	if broadcasted {
 		t.Error("broadcasted empty message")
 	}
+}
+
+func testClient() *Client {
+	return &Client{"test", false, make(chan *Message, 1)}
 }
