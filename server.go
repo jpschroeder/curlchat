@@ -26,8 +26,7 @@ func (s *Server) Connect(w http.ResponseWriter, r *http.Request) {
 	setHeaders(w)
 	writer := WriteFlusher{w, getFlusher(w)}
 	printWelcome(writer)
-	go client.WritePump(writer, AnsiFormatter{})
-	<-r.Context().Done()
+	client.WritePump(writer, r.Context().Done(), AnsiFormatter{})
 }
 
 func setHeaders(w http.ResponseWriter) {

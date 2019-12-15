@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"io"
+	"log"
 	"time"
 )
 
@@ -14,13 +15,17 @@ type Client struct {
 	send     chan *Message
 }
 
-func (c *Client) ReadPump(reader io.Reader, broadcast chan<- *Message) {
+func (c *Client) ReadPump(reader io.ReadCloser, broadcast chan<- *Message) {
+	log.Printf("%s: reader started", c.username)
 	handler := ReadCallback{c, broadcast}
 	// will return on disconnect
 	io.Copy(handler, reader)
+	reader.Close()
+	log.Printf("%s: reader done", c.username)
 }
 
-func (c *Client) WritePump(writer io.Writer, formatter Formatter) {
+func (c *Client) WritePump(writer io.Writer, done <-chan struct{}, formatter Formatter) {
+	log.Printf("%s: writer started", c.username)
 
 	// drip a stream of noop characters to fix a bug in old versions of curl
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -30,17 +35,21 @@ func (c *Client) WritePump(writer io.Writer, formatter Formatter) {
 		defer ticker.Stop()
 	}
 
+writeloop:
 	for {
 		select {
 		case message, ok := <-c.send:
 			if !ok {
-				return
+				break writeloop
 			}
 			writer.Write(formatter.Format(message, c))
 		case <-ticker.C:
 			writer.Write([]byte(noop)) // reset color as noop
+		case <-done:
+			break writeloop
 		}
 	}
+	log.Printf("%s: writer done", c.username)
 }
 
 type ReadCallback struct {

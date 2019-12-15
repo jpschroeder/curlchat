@@ -26,7 +26,7 @@ func TestClient_WritePump(t *testing.T) {
 
 	client.send <- message
 	close(client.send)
-	client.WritePump(&w, &TestFormatter{})
+	client.WritePump(&w, make(chan struct{}), &TestFormatter{})
 
 	if bytes.Compare(w.written, message.buffer) != 0 {
 		t.Errorf("buffer mismatch: %s", string(w.written))
@@ -37,8 +37,9 @@ func TestClient_WriteDrip(t *testing.T) {
 	client := testClient()
 	client.oldcurl = true
 	w := TestWriter{}
+	done := make(chan struct{})
 
-	go client.WritePump(&w, &TestFormatter{})
+	go client.WritePump(&w, done, &TestFormatter{})
 
 	for {
 		if w.written != nil {
@@ -46,7 +47,8 @@ func TestClient_WriteDrip(t *testing.T) {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	close(client.send)
+	var d struct{}
+	done <- d
 
 	if bytes.Compare(w.written, []byte(noop)) != 0 {
 		t.Errorf("noop not dripped: %s", string(w.written))
