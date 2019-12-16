@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type WriteFlusher struct {
@@ -41,4 +42,8 @@ func isOldCurl(agent string) bool {
 		return true
 	}
 	return false
+}
+
+func isTerminal(agent string) bool {
+	return strings.HasPrefix(agent, "curl")
 }

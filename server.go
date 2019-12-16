@@ -4,18 +4,19 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync/atomic"
 	"time"
 )
 
 type Server struct {
-	pipes   *PipeCollection
-	baseURL string
+	pipes *PipeCollection
+	maxID uint64
 }
 
 func (s *Server) Connect(w http.ResponseWriter, r *http.Request) {
 	pipe := s.pipes.GetPipe()
 	client := &Client{
-		username: getUserName(r, pipe.NextID()),
+		username: getUserName(r, s.NextID()),
 		oldcurl:  isOldCurl(r.UserAgent()),
 		send:     make(chan *Message, 256)}
 	defer pipe.Unregister(client)
@@ -27,6 +28,10 @@ func (s *Server) Connect(w http.ResponseWriter, r *http.Request) {
 	writer := WriteFlusher{w, getFlusher(w)}
 	printWelcome(writer)
 	client.WritePump(writer, r.Context().Done(), AnsiFormatter{})
+}
+
+func (s *Server) NextID() uint64 {
+	return atomic.AddUint64(&s.maxID, 1)
 }
 
 func setHeaders(w http.ResponseWriter) {

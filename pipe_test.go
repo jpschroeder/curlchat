@@ -27,26 +27,10 @@ func TestPipe_Run(t *testing.T) {
 	if joined.mtype != SystemMsg {
 		t.Error("invalid join type")
 	}
-	if bytes.Compare(joined.buffer, []byte("joined\n")) != 0 {
+	if bytes.Compare(joined.buffer, []byte("joined")) != 0 {
 		t.Error("invalid join buffer")
 	}
 	if received != message {
 		t.Errorf("message mismatch: %s", string(received.buffer))
-	}
-}
-
-func TestPipe_NextID(t *testing.T) {
-	pipe := &Pipe{}
-	id1 := pipe.NextID()
-	if id1 != 1 {
-		t.Errorf("inalid nextid: %d", id1)
-	}
-	id2 := pipe.NextID()
-	if id2 != 2 {
-		t.Errorf("inalid nextid: %d", id2)
-	}
-	id3 := pipe.NextID()
-	if id3 != 3 {
-		t.Errorf("inalid nextid: %d", id3)
 	}
 }

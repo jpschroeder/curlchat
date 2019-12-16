@@ -1,15 +1,10 @@
 package main
 
-import (
-	"sync/atomic"
-)
-
 type Pipe struct {
 	clients    map[*Client]bool
 	broadcast  chan *Message
 	register   chan *Client
 	unregister chan *Client
-	maxID      uint64
 }
 
 func NewPipe() *Pipe {
@@ -19,10 +14,6 @@ func NewPipe() *Pipe {
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
 	}
-}
-
-func (p *Pipe) NextID() uint64 {
-	return atomic.AddUint64(&p.maxID, 1)
 }
 
 func (p *Pipe) Register(c *Client) {
@@ -51,7 +42,7 @@ func (p *Pipe) Run() {
 
 func (p *Pipe) add(client *Client) {
 	p.clients[client] = true
-	p.enqueue(&Message{client, []byte("joined\n"), SystemMsg})
+	p.enqueue(&Message{client, []byte("joined"), SystemMsg})
 }
 
 func (p *Pipe) remove(client *Client) {
@@ -63,7 +54,7 @@ func (p *Pipe) remove(client *Client) {
 	if client.send != nil {
 		close(client.send)
 	}
-	p.enqueue(&Message{client, []byte("left\n"), SystemMsg})
+	p.enqueue(&Message{client, []byte("left"), SystemMsg})
 }
 
 func (p *Pipe) enqueue(message *Message) {

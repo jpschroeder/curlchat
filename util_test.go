@@ -15,6 +15,10 @@ func (t *TestReader) Read(p []byte) (n int, err error) {
 	return len(t.read), io.EOF
 }
 
+func (t *TestReader) Close() error {
+	return nil
+}
+
 type TestWriter struct {
 	written []byte
 }

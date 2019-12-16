@@ -13,13 +13,9 @@ func main() {
 		"the address/port to listen on for http \n"+
 			"use :<port> to listen on all addresses\n")
 
-	// Accept a command line flag "-baseurl https://mysite.com/"
-	baseurl := flag.String("baseurl", "http://localhost:8080/",
-		"the base url of the service \n")
-
 	flag.Parse()
 
-	s := Server{&PipeCollection{}, *baseurl}
+	s := Server{&PipeCollection{}, 0}
 	http.HandleFunc("/", s.Connect)
 
 	log.Println("Listening on http:", *httpaddr)
