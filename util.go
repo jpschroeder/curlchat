@@ -8,15 +8,22 @@ import (
 	"strings"
 )
 
-type WriteFlusher struct {
+type WriteFlusher interface {
+	io.Writer
+	http.Flusher
+}
+
+type WriteFlush struct {
 	writer  io.Writer
 	flusher http.Flusher
 }
 
-func (wf WriteFlusher) Write(buffer []byte) (int, error) {
-	n, e := wf.writer.Write(buffer)
+func (wf WriteFlush) Write(buffer []byte) (int, error) {
+	return wf.writer.Write(buffer)
+}
+
+func (wf WriteFlush) Flush() {
 	wf.flusher.Flush()
-	return n, e
 }
 
 var rex = regexp.MustCompile(`curl\/(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)`)

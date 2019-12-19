@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"io"
 	"testing"
 )
@@ -21,42 +20,31 @@ func (t *TestReader) Close() error {
 
 type TestWriter struct {
 	written []byte
+	writing []byte
 }
 
 func (t *TestWriter) Write(p []byte) (n int, err error) {
-	t.written = p
+	if t.writing == nil {
+		t.writing = p
+	} else {
+		t.writing = append(t.writing, p...)
+	}
 	return 0, nil
 }
 
-type TestFlusher struct {
-	called bool
-}
-
-func (t *TestFlusher) Flush() {
-	t.called = true
+func (t *TestWriter) Flush() {
+	t.written = t.writing
+	t.writing = nil
 }
 
 type TestFormatter struct {
 }
 
-func (f TestFormatter) Format(m *Message, to *Client) []byte {
-	return m.buffer
+func (f TestFormatter) Welcome(w io.Writer, c *Client) {
 }
 
-func TestUtil_WriteFlusher(t *testing.T) {
-	w := TestWriter{}
-	f := TestFlusher{}
-	wf := WriteFlusher{&w, &f}
-	p := []byte("test message")
-	wf.Write(p)
-
-	if bytes.Compare(w.written, p) != 0 {
-		t.Error("buffer mismatch")
-	}
-
-	if !f.called {
-		t.Error("flush not called")
-	}
+func (f TestFormatter) Message(w io.Writer, m *Message, to *Client) {
+	w.Write(m.buffer)
 }
 
 func TestUtil_IsOldCurl(t *testing.T) {

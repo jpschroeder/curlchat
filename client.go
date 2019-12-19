@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -24,8 +25,11 @@ func (c *Client) ReadPump(reader io.ReadCloser, broadcast chan<- *Message) {
 	log.Printf("%s: reader done", c.username)
 }
 
-func (c *Client) WritePump(writer io.Writer, done <-chan struct{}, formatter Formatter) {
+func (c *Client) WritePump(writer WriteFlusher, done <-chan struct{}, formatter Formatter) {
 	log.Printf("%s: writer started", c.username)
+
+	formatter.Welcome(writer, c)
+	writer.Flush()
 
 	// drip a stream of noop characters to fix a bug in old versions of curl
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -42,9 +46,11 @@ writeloop:
 			if !ok {
 				break writeloop
 			}
-			writer.Write(formatter.Format(message, c))
+			formatter.Message(writer, message, c)
+			writer.Flush()
 		case <-ticker.C:
-			writer.Write([]byte(noop)) // reset color as noop
+			fmt.Fprintf(writer, noop) // reset color as noop
+			writer.Flush()
 		case <-done:
 			break writeloop
 		}

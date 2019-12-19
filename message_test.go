@@ -10,9 +10,11 @@ func TestMessage_FormatNoEchoClient(t *testing.T) {
 	f := AnsiFormatter{}
 	c := &Client{}
 	m := &Message{c, []byte("test buffer"), ClientMsg}
-	out := f.Format(m, c)
-	if len(out) > 0 {
-		t.Error("shouldn't have echoed client msg")
+	w := &TestWriter{}
+	f.Message(w, m, c)
+	w.Flush()
+	if strings.Contains(string(w.written), "test buffer") {
+		t.Errorf("shouldn't have echoed client msg: %s", w.written)
 	}
 }
 
@@ -20,15 +22,14 @@ func TestMessage_FormatSystemMessage(t *testing.T) {
 	f := AnsiFormatter{}
 	c := &Client{}
 	m := &Message{c, []byte("test buffer"), SystemMsg}
-	out := f.Format(m, c)
-	if len(out) < 1 {
-		t.Error("should have echoed system msg")
+	w := &TestWriter{}
+	f.Message(w, m, c)
+	w.Flush()
+	if len(w.written) < 1 {
+		t.Errorf("should have echoed system msg: %s", w.written)
 	}
-	if !strings.Contains(string(out), strconv.Itoa(int(SystemColor))) {
-		t.Errorf("should have been colored with system color: %s", out)
-	}
-	if out[len(out)-1] != byte('\n') {
-		t.Error("should end with a newline")
+	if !strings.Contains(string(w.written), strconv.Itoa(int(SystemColor))) {
+		t.Errorf("should have been colored with system color: %s", w.written)
 	}
 }
 
@@ -37,15 +38,17 @@ func TestMessage_FormatUsername(t *testing.T) {
 	c1 := &Client{username: "c1"}
 	c2 := &Client{username: "c2"}
 	m := &Message{c1, []byte("test buffer"), ClientMsg}
-	out := f.Format(m, c2)
-	if len(out) < 1 {
+	w := &TestWriter{}
+	f.Message(w, m, c2)
+	w.Flush()
+	if len(w.written) < 1 {
 		t.Error("should have sent msg")
 	}
-	if !strings.Contains(string(out), "c1") {
-		t.Errorf("username not added: %s", string(out))
+	if !strings.Contains(string(w.written), "c1") {
+		t.Errorf("username not added: %s", string(w.written))
 	}
-	if !strings.Contains(string(out), strconv.Itoa(int(UserColor("c1")))) {
-		t.Errorf("username not colored: %s", string(out))
+	if !strings.Contains(string(w.written), strconv.Itoa(int(UserColor("c1")))) {
+		t.Errorf("username not colored: %s", string(w.written))
 	}
 }
 

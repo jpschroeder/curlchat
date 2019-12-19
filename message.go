@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"hash/fnv"
+	"io"
 )
 
 type MessageType int
@@ -19,33 +20,53 @@ type Message struct {
 }
 
 type Formatter interface {
-	Format(m *Message, to *Client) []byte
+	Welcome(w io.Writer, c *Client)
+	Message(w io.Writer, m *Message, to *Client)
 }
 
 type AnsiFormatter struct {
 }
 
-func (f AnsiFormatter) Format(m *Message, to *Client) []byte {
-	if m.from == to && m.mtype == ClientMsg {
-		return []byte{}
-	}
-	ret := m.buffer
+const (
+	savecursor    = "\033[s"
+	restorecursor = "\033[u"
+	insertline    = "\033[L"
+	linebeginning = "\033[1G"
+	cursordown    = "\033[B"
+	colorformat   = "\033[38;05;%dm" // accepts color int
+	coloroff      = "\033[0m"
+	// Inserts a message above the prompt and doesn't wipe out message in progress
+	ansiprefix = savecursor + insertline + linebeginning
+	ansisuffix = restorecursor + cursordown
+)
 
-	uname := m.from.username + ": "
-	if m.mtype == ClientMsg {
-		uname = f.Colorize(uname, UserColor(m.from.username))
-	}
-	ret = append([]byte(uname), ret...)
-
-	if m.mtype == SystemMsg {
-		ret = []byte(f.Colorize(string(ret), SystemColor))
-		ret = append(ret, byte('\n'))
-	}
-	return ret
+func (f AnsiFormatter) Welcome(w io.Writer, c *Client) {
+	fmt.Fprintf(w, "Welcome to curlchat\n")
+	f.prompt(w, c)
 }
 
-func (f AnsiFormatter) Colorize(s string, c Color) string {
-	return fmt.Sprintf("\033[38;05;%dm%s\033[0m", c, s)
+func (f AnsiFormatter) Message(w io.Writer, m *Message, to *Client) {
+	if m.mtype == ClientMsg && m.from == to {
+		f.prompt(w, m.from)
+		return
+	}
+
+	if m.mtype == ClientMsg {
+		fmt.Fprintf(w, ansiprefix+colorformat+"%s: "+coloroff, UserColor(m.from.username), m.from.username)
+		w.Write(m.buffer)
+		fmt.Fprintf(w, ansisuffix)
+		return
+	}
+	if m.mtype == SystemMsg {
+		fmt.Fprintf(w, ansiprefix+colorformat+"%s: ", SystemColor, m.from.username)
+		w.Write(m.buffer)
+		fmt.Fprintf(w, coloroff+ansisuffix)
+		return
+	}
+}
+
+func (f AnsiFormatter) prompt(w io.Writer, c *Client) {
+	fmt.Fprintf(w, colorformat+"%s: "+coloroff, UserColor(c.username), c.username)
 }
 
 type Color uint8
