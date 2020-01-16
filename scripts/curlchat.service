@@ -1,0 +1,12 @@
+[Unit]
+Description=curlchat
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+WorkingDirectory=/root/data/curlchat
+ExecStart=/root/data/curlchat/curlchat -httpaddr localhost:8086 -baseurl https://chat.pipeto.me/
+
+[Install]
+WantedBy=multi-user.target

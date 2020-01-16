@@ -8,8 +8,9 @@ import (
 )
 
 type Server struct {
-	pipes *PipeCollection
-	maxID uint64
+	pipes   *PipeCollection
+	maxID   uint64
+	baseURL string
 }
 
 func (s *Server) Connect(w http.ResponseWriter, r *http.Request) {
