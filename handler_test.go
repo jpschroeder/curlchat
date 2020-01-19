@@ -2,17 +2,17 @@ package main
 
 import "testing"
 
-func TestServer_NextID(t *testing.T) {
-	server := &Server{}
-	id1 := server.NextID()
+func TestHandler_NextID(t *testing.T) {
+	handler := &Handler{}
+	id1 := handler.NextID()
 	if id1 != 1 {
 		t.Errorf("inalid nextid: %d", id1)
 	}
-	id2 := server.NextID()
+	id2 := handler.NextID()
 	if id2 != 2 {
 		t.Errorf("inalid nextid: %d", id2)
 	}
-	id3 := server.NextID()
+	id3 := handler.NextID()
 	if id3 != 3 {
 		t.Errorf("inalid nextid: %d", id3)
 	}

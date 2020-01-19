@@ -25,23 +25,18 @@ type Formatter interface {
 }
 
 type AnsiFormatter struct {
+	baseURL string
 }
 
 const (
-	savecursor    = "\033[s"
-	restorecursor = "\033[u"
-	insertline    = "\033[L"
 	linebeginning = "\033[1G"
-	cursordown    = "\033[B"
 	colorformat   = "\033[38;05;%dm" // accepts color int
 	coloroff      = "\033[0m"
-	// Inserts a message above the prompt and doesn't wipe out message in progress
-	ansiprefix = savecursor + insertline + linebeginning
-	ansisuffix = restorecursor + cursordown
 )
 
 func (f AnsiFormatter) Welcome(w io.Writer, c *Client) {
 	fmt.Fprintf(w, "Welcome to curlchat\n")
+	fmt.Fprintf(w, "curl -T. -N %s -u username:\n", f.baseURL)
 	f.prompt(w, c)
 }
 
@@ -52,17 +47,15 @@ func (f AnsiFormatter) Message(w io.Writer, m *Message, to *Client) {
 	}
 
 	if m.mtype == ClientMsg {
-		fmt.Fprintf(w, ansiprefix+colorformat+"%s: "+coloroff, UserColor(m.from.username), m.from.username)
+		fmt.Fprintf(w, linebeginning+colorformat+"%s: "+coloroff, UserColor(m.from.username), m.from.username)
 		w.Write(m.buffer)
-		fmt.Fprintf(w, ansisuffix)
-		return
 	}
 	if m.mtype == SystemMsg {
-		fmt.Fprintf(w, ansiprefix+colorformat+"%s: ", SystemColor, m.from.username)
+		fmt.Fprintf(w, linebeginning+colorformat+"%s: ", SystemColor, m.from.username)
 		w.Write(m.buffer)
-		fmt.Fprintf(w, coloroff+ansisuffix)
-		return
+		fmt.Fprintf(w, "%s\n", coloroff)
 	}
+	f.prompt(w, to)
 }
 
 func (f AnsiFormatter) prompt(w io.Writer, c *Client) {

@@ -7,29 +7,32 @@ import (
 	"time"
 )
 
-type Server struct {
+type Handler struct {
 	pipes   *PipeCollection
 	maxID   uint64
 	baseURL string
 }
 
-func (s *Server) Connect(w http.ResponseWriter, r *http.Request) {
-	pipe := s.pipes.GetPipe()
+func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
+	pipe := h.pipes.GetPipe()
 	client := &Client{
-		username: getUserName(r, s.NextID()),
+		username: getUserName(r, h.NextID()),
 		oldcurl:  isOldCurl(r.UserAgent()),
-		send:     make(chan *Message, 256)}
+		send:     make(chan *Message, 256),
+	}
 	defer pipe.Unregister(client)
 	pipe.Register(client)
 
 	go client.ReadPump(r.Body, pipe.broadcast)
+	// The 100-continue message is sent on the first read from the Copy goroutine above
+	// A short delay is needed to ensure that it goes out before any data is writen back
 	time.Sleep(10 * time.Millisecond)
 	setHeaders(w)
-	client.WritePump(WriteFlush{w, getFlusher(w)}, r.Context().Done(), AnsiFormatter{})
+	client.WritePump(WriteFlush{w, getFlusher(w)}, r.Context().Done(), AnsiFormatter{h.baseURL})
 }
 
-func (s *Server) NextID() uint64 {
-	return atomic.AddUint64(&s.maxID, 1)
+func (h *Handler) NextID() uint64 {
+	return atomic.AddUint64(&h.maxID, 1)
 }
 
 func setHeaders(w http.ResponseWriter) {

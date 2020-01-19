@@ -19,8 +19,8 @@ func main() {
 
 	flag.Parse()
 
-	s := Server{&PipeCollection{}, 0, *baseurl}
-	http.HandleFunc("/", s.Connect)
+	h := Handler{&PipeCollection{}, 0, *baseurl}
+	http.HandleFunc("/", h.Handle)
 
 	log.Println("Listening on http:", *httpaddr)
 	log.Fatal(http.ListenAndServe(*httpaddr, nil))

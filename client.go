@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"time"
 )
 
@@ -17,17 +16,13 @@ type Client struct {
 }
 
 func (c *Client) ReadPump(reader io.ReadCloser, broadcast chan<- *Message) {
-	log.Printf("%s: reader started", c.username)
 	handler := ReadCallback{c, broadcast}
 	// will return on disconnect
 	io.Copy(handler, reader)
 	reader.Close()
-	log.Printf("%s: reader done", c.username)
 }
 
 func (c *Client) WritePump(writer WriteFlusher, done <-chan struct{}, formatter Formatter) {
-	log.Printf("%s: writer started", c.username)
-
 	formatter.Welcome(writer, c)
 	writer.Flush()
 
@@ -39,12 +34,11 @@ func (c *Client) WritePump(writer WriteFlusher, done <-chan struct{}, formatter 
 		defer ticker.Stop()
 	}
 
-writeloop:
 	for {
 		select {
 		case message, ok := <-c.send:
 			if !ok {
-				break writeloop
+				return
 			}
 			formatter.Message(writer, message, c)
 			writer.Flush()
@@ -52,10 +46,9 @@ writeloop:
 			fmt.Fprintf(writer, noop) // reset color as noop
 			writer.Flush()
 		case <-done:
-			break writeloop
+			return
 		}
 	}
-	log.Printf("%s: writer done", c.username)
 }
 
 type ReadCallback struct {
