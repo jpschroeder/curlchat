@@ -48,37 +48,37 @@ func (f TestFormatter) Message(w io.Writer, m *Message, to *Client) {
 }
 
 func TestUtil_IsOldCurl(t *testing.T) {
-	if isOldCurl("curl/7.58.0") == false {
+	if parseAgent("curl/7.58.0").isOldCurl() == false {
 		t.Error("7.58 is old")
 	}
-	if isOldCurl("curl/7.67.9") == false {
+	if parseAgent("curl/7.67.9").isOldCurl() == false {
 		t.Error("7.67 is old")
 	}
-	if isOldCurl("curl/6.68.0") == false {
+	if parseAgent("curl/6.68.0").isOldCurl() == false {
 		t.Error("6.68 is old")
 	}
-	if isOldCurl("curl/6.70.0") == false {
+	if parseAgent("curl/6.70.0").isOldCurl() == false {
 		t.Error("6.70 is old")
 	}
-	if isOldCurl("curl/7.67.0-DEV") == false {
+	if parseAgent("curl/7.67.0-DEV").isOldCurl() == false {
 		t.Error("7.67 is old")
 	}
-	if isOldCurl("curl/7.68.0-DEV") == true {
+	if parseAgent("curl/7.68.0-DEV").isOldCurl() == true {
 		t.Error("7.68 is new")
 	}
-	if isOldCurl("curl/7.68.0") == true {
+	if parseAgent("curl/7.68.0").isOldCurl() == true {
 		t.Error("7.68 is new")
 	}
-	if isOldCurl("curl/7.68.5") == true {
+	if parseAgent("curl/7.68.5").isOldCurl() == true {
 		t.Error("7.68 is new")
 	}
-	if isOldCurl("curl/8.00.0") == true {
+	if parseAgent("curl/8.00.0").isOldCurl() == true {
 		t.Error("8.00 is new")
 	}
-	if isOldCurl("blahbloo") == true {
+	if parseAgent("blahbloo").isOldCurl() == true {
 		t.Error("everything else isn't old")
 	}
-	if isOldCurl("curly/1.00.0") == true {
+	if parseAgent("curly/1.00.0").isOldCurl() == true {
 		t.Error("everything else isn't old")
 	}
 }

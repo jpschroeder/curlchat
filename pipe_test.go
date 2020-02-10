@@ -13,7 +13,7 @@ func TestPipe_Run(t *testing.T) {
 		clients:    make(map[*Client]bool),
 	}
 
-	client := &Client{"client1", false, make(chan *Message, 1)}
+	client := &Client{"client1", UserAgent{false, 0, 0}, make(chan *Message, 1), TestFormatter{}}
 	message := &Message{client, []byte("test buffer"), SystemMsg}
 	go pipe.Run()
 	pipe.Register(client)

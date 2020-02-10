@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 )
 
 type WriteFlusher interface {
@@ -28,29 +27,35 @@ func (wf WriteFlush) Flush() {
 
 var rex = regexp.MustCompile(`curl\/(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)`)
 
-// Parse user agent for a version of curl less than 7.68
-func isOldCurl(agent string) bool {
+type UserAgent struct {
+	isCurl bool
+	major  int64
+	minor  int64
+}
+
+func parseAgent(agent string) UserAgent {
 	match := rex.FindStringSubmatch(agent)
 	if match == nil {
+		return UserAgent{false, 0, 0}
+	}
+	major, _ := strconv.ParseInt(match[1], 10, 32)
+	minor, _ := strconv.ParseInt(match[2], 10, 32)
+	return UserAgent{true, major, minor}
+}
+
+// is user agent a version of curl less than 7.68
+func (a UserAgent) isOldCurl() bool {
+	if !a.isCurl {
 		return false
 	}
-	major, maerr := strconv.ParseInt(match[1], 10, 32)
-	minor, mierr := strconv.ParseInt(match[2], 10, 32)
-	if maerr != nil || mierr != nil {
-		return false
-	}
-	if major < 7 {
+	if a.major < 7 {
 		return true
 	}
-	if major > 7 {
+	if a.major > 7 {
 		return false
 	}
-	if minor < 68 {
+	if a.minor < 68 {
 		return true
 	}
 	return false
-}
-
-func isTerminal(agent string) bool {
-	return strings.HasPrefix(agent, "curl")
 }

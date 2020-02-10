@@ -24,6 +24,13 @@ type Formatter interface {
 	Message(w io.Writer, m *Message, to *Client)
 }
 
+func getFormatter(agent UserAgent, baseURL string) Formatter {
+	if agent.isCurl {
+		return AnsiFormatter{baseURL}
+	}
+	return TextFormatter{baseURL}
+}
+
 type AnsiFormatter struct {
 	baseURL string
 }
@@ -60,6 +67,31 @@ func (f AnsiFormatter) Message(w io.Writer, m *Message, to *Client) {
 
 func (f AnsiFormatter) prompt(w io.Writer, c *Client) {
 	fmt.Fprintf(w, colorformat+"%s: "+coloroff, UserColor(c.username), c.username)
+}
+
+type TextFormatter struct {
+	baseURL string
+}
+
+func (f TextFormatter) Welcome(w io.Writer, c *Client) {
+	fmt.Fprintf(w, "Welcome to curlchat\n")
+	fmt.Fprintf(w, "curl -T. -N %s -u username:\n", f.baseURL)
+	f.prompt(w, c)
+}
+
+func (f TextFormatter) Message(w io.Writer, m *Message, to *Client) {
+	if m.mtype == ClientMsg && m.from == to {
+		f.prompt(w, m.from)
+		return
+	}
+
+	f.prompt(w, m.from)
+	w.Write(m.buffer)
+	f.prompt(w, to)
+}
+
+func (f TextFormatter) prompt(w io.Writer, c *Client) {
+	fmt.Fprintf(w, "%s: ", c.username)
 }
 
 type Color uint8

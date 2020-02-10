@@ -15,10 +15,12 @@ type Handler struct {
 
 func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	pipe := h.pipes.GetPipe()
+	agent := parseAgent(r.UserAgent())
 	client := &Client{
-		username: getUserName(r, h.NextID()),
-		oldcurl:  isOldCurl(r.UserAgent()),
-		send:     make(chan *Message, 256),
+		username:  getUserName(r, h.NextID()),
+		agent:     agent,
+		send:      make(chan *Message, 256),
+		formatter: getFormatter(agent, h.baseURL),
 	}
 	defer pipe.Unregister(client)
 	pipe.Register(client)
@@ -28,7 +30,7 @@ func (h *Handler) Handle(w http.ResponseWriter, r *http.Request) {
 	// A short delay is needed to ensure that it goes out before any data is writen back
 	time.Sleep(10 * time.Millisecond)
 	setHeaders(w)
-	client.WritePump(WriteFlush{w, getFlusher(w)}, r.Context().Done(), AnsiFormatter{h.baseURL})
+	client.WritePump(WriteFlush{w, getFlusher(w)}, r.Context().Done())
 }
 
 func (h *Handler) NextID() uint64 {

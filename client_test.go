@@ -26,7 +26,7 @@ func TestClient_WritePump(t *testing.T) {
 
 	client.send <- message
 	close(client.send)
-	client.WritePump(&w, make(chan struct{}), &TestFormatter{})
+	client.WritePump(&w, make(chan struct{}))
 
 	if bytes.Compare(w.written, message.buffer) != 0 {
 		t.Errorf("buffer mismatch: %s", string(w.written))
@@ -35,11 +35,11 @@ func TestClient_WritePump(t *testing.T) {
 
 func TestClient_WriteDrip(t *testing.T) {
 	client := testClient()
-	client.oldcurl = true
+	client.agent = UserAgent{true, 0, 0}
 	w := TestWriter{}
 	done := make(chan struct{})
 
-	go client.WritePump(&w, done, &TestFormatter{})
+	go client.WritePump(&w, done)
 
 	for {
 		if w.written != nil {
@@ -99,5 +99,5 @@ func TestClient_IngoreEmpty(t *testing.T) {
 }
 
 func testClient() *Client {
-	return &Client{"test", false, make(chan *Message, 1)}
+	return &Client{"test", UserAgent{false, 0, 0}, make(chan *Message, 1), TestFormatter{}}
 }

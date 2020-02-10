@@ -10,9 +10,10 @@ import (
 const noop = "\033[0m" // use reset color as noop
 
 type Client struct {
-	username string
-	oldcurl  bool
-	send     chan *Message
+	username  string
+	agent     UserAgent
+	send      chan *Message
+	formatter Formatter
 }
 
 func (c *Client) ReadPump(reader io.ReadCloser, broadcast chan<- *Message) {
@@ -22,13 +23,13 @@ func (c *Client) ReadPump(reader io.ReadCloser, broadcast chan<- *Message) {
 	reader.Close()
 }
 
-func (c *Client) WritePump(writer WriteFlusher, done <-chan struct{}, formatter Formatter) {
-	formatter.Welcome(writer, c)
+func (c *Client) WritePump(writer WriteFlusher, done <-chan struct{}) {
+	c.formatter.Welcome(writer, c)
 	writer.Flush()
 
 	// drip a stream of noop characters to fix a bug in old versions of curl
 	ticker := time.NewTicker(500 * time.Millisecond)
-	if !c.oldcurl {
+	if !c.agent.isOldCurl() {
 		ticker.Stop()
 	} else {
 		defer ticker.Stop()
@@ -40,7 +41,7 @@ func (c *Client) WritePump(writer WriteFlusher, done <-chan struct{}, formatter 
 			if !ok {
 				return
 			}
-			formatter.Message(writer, message, c)
+			c.formatter.Message(writer, message, c)
 			writer.Flush()
 		case <-ticker.C:
 			fmt.Fprintf(writer, noop) // reset color as noop
