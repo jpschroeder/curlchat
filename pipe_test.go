@@ -1,8 +1,9 @@
 package main
 
-import "testing"
-
-import "bytes"
+import (
+	"strings"
+	"testing"
+)
 
 func TestPipe_Run(t *testing.T) {
 	pipe := &Pipe{
@@ -27,7 +28,7 @@ func TestPipe_Run(t *testing.T) {
 	if joined.mtype != SystemMsg {
 		t.Error("invalid join type")
 	}
-	if bytes.Compare(joined.buffer, []byte("joined")) != 0 {
+	if !strings.Contains(string(joined.buffer), "joined") {
 		t.Error("invalid join buffer")
 	}
 	if received != message {
