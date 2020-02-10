@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type Pipe struct {
 	clients    map[*Client]bool
 	broadcast  chan *Message
@@ -42,7 +44,7 @@ func (p *Pipe) Run() {
 
 func (p *Pipe) add(client *Client) {
 	p.clients[client] = true
-	p.enqueue(&Message{client, []byte("joined"), SystemMsg})
+	p.enqueue(&Message{client, []byte(fmt.Sprintf("joined (%d users connected)", len(p.clients))), SystemMsg})
 }
 
 func (p *Pipe) remove(client *Client) {
@@ -54,7 +56,7 @@ func (p *Pipe) remove(client *Client) {
 	if client.send != nil {
 		close(client.send)
 	}
-	p.enqueue(&Message{client, []byte("left"), SystemMsg})
+	p.enqueue(&Message{client, []byte(fmt.Sprintf("left (%d users connected)", len(p.clients))), SystemMsg})
 }
 
 func (p *Pipe) enqueue(message *Message) {
