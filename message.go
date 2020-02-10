@@ -76,22 +76,18 @@ type TextFormatter struct {
 func (f TextFormatter) Welcome(w io.Writer, c *Client) {
 	fmt.Fprintf(w, "Welcome to curlchat\n")
 	fmt.Fprintf(w, "curl -T. -N %s -u username:\n", f.baseURL)
-	f.prompt(w, c)
 }
 
 func (f TextFormatter) Message(w io.Writer, m *Message, to *Client) {
 	if m.mtype == ClientMsg && m.from == to {
-		f.prompt(w, m.from)
 		return
 	}
 
-	f.prompt(w, m.from)
+	fmt.Fprintf(w, "%s: ", m.from.username)
 	w.Write(m.buffer)
-	f.prompt(w, to)
-}
-
-func (f TextFormatter) prompt(w io.Writer, c *Client) {
-	fmt.Fprintf(w, "%s: ", c.username)
+	if m.mtype == SystemMsg {
+		w.Write([]byte("\n"))
+	}
 }
 
 type Color uint8
